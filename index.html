@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Mapa de campo · Viento Sur</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#1f5a3a">
+<meta name="theme-color" content="#065031">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mapa campo">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="favicon.png">
 <style>
-:root{--bg:#f4f1ea;--ink:#1d2420;--mut:#5d675f;--acc:#1f5a3a;--acc2:#2d7a50;--line:#d9d3c5;--card:#fff;--me:#1565c0;--trk:#7b1fa2;--pt:#e65100;
+:root{--bg:#f4f1ea;--ink:#1d2420;--mut:#5d675f;--acc:#065031;--acc2:#8fb339;--line:#d9d3c5;--card:#fff;--me:#1565c0;--trk:#7b1fa2;--pt:#e65100;
   --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
@@ -83,8 +84,10 @@ header .title{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:e
 
 <!-- ============ PANTALLA INICIO ============ -->
 <section id="home">
-  <h1>Mapa de campo</h1>
-  <div class="sub">Agroestudio Viento Sur · mapas GeoPDF con GPS, sin señal</div>
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+    <img src="logo.png" alt="Viento Sur" width="72" height="72" style="flex:none">
+    <div><h1 style="margin:0">Mapa de campo</h1><div class="sub" style="margin:2px 0 0">Agroestudio Viento Sur · mapas GeoPDF con GPS, sin señal</div></div>
+  </div>
   <button class="bigbtn" id="btnOpen">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     Abrir PDF georreferenciado

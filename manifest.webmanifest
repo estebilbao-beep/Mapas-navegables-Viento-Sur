@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f4f1ea",
-  "theme_color": "#1f5a3a",
+  "theme_color": "#065031",
   "lang": "es-AR",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
