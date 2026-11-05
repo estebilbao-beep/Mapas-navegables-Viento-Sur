@@ -1,6 +1,6 @@
 {
-  "name": "Mapa de campo · Viento Sur",
-  "short_name": "Mapa campo",
+  "name": "GeoCampo · Viento Sur",
+  "short_name": "GeoCampo",
   "description": "Mapas GeoPDF (Xarvio, QGIS) con GPS, puntos y recorrido, sin señal.",
   "start_url": "./",
   "scope": "./",

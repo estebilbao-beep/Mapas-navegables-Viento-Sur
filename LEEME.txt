@@ -1,4 +1,4 @@
-MAPA DE CAMPO · Agroestudio Viento Sur
+GEOCAMPO · Agroestudio Viento Sur
 App web instalable (PWA) para abrir GeoPDF (Xarvio, QGIS, etc.) y navegar con GPS sin señal.
 
 CÓMO PUBLICARLA (una sola vez)

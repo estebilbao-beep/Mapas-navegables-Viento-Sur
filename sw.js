@@ -1,5 +1,5 @@
 // Service worker: guarda la app en el teléfono para que abra sin internet.
-const C = 'mapacampo-v3';
+const C = 'mapacampo-v4';
 const FILES = ['./', './index.html', './pdf.js', './pdf.worker.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './logo.png', './favicon.png'];
 
 self.addEventListener('install', e => {
