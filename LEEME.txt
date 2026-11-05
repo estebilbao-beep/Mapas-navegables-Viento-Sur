@@ -1,0 +1,36 @@
+MAPA DE CAMPO · Agroestudio Viento Sur
+App web instalable (PWA) para abrir GeoPDF (Xarvio, QGIS, etc.) y navegar con GPS sin señal.
+
+CÓMO PUBLICARLA (una sola vez)
+El GPS del navegador solo funciona en una dirección https://, por eso hay que subir esta carpeta a un hosting gratuito:
+
+Opción A – GitHub Pages (queda fija y gratis)
+ 1. Crear cuenta en github.com y un repositorio nuevo, por ej. "mapa-campo" (público).
+ 2. "Add file" > "Upload files" > arrastrar TODOS los archivos de esta carpeta > Commit.
+ 3. Settings > Pages > Source: "Deploy from a branch", rama main, carpeta / (root) > Save.
+ 4. En 1-2 minutos queda en https://TU_USUARIO.github.io/mapa-campo/
+
+Opción B – Netlify (app.netlify.com/drop)
+ Arrastrar la carpeta descomprimida. Crear cuenta gratis para que el sitio no se borre.
+
+INSTALAR EN EL CELULAR
+ - Android (Chrome): abrir la dirección > menú ⋮ > "Instalar app" / "Agregar a pantalla principal".
+ - iPhone (Safari): abrir la dirección > Compartir > "Agregar a inicio".
+ Abrila una vez con internet: desde ahí queda guardada y abre sin señal.
+
+USO
+ - "Abrir PDF georreferenciado": elegir el PDF (en Android instalada, también aparece en "Compartir" desde WhatsApp/Archivos).
+ - "Usar sin mapa": abre una cuadrícula de 5 x 5 km centrada en tu posición (líneas cada 100 m) para marcar waypoints y medir áreas sin PDF. ⋮ > Recentrar si te alejás.
+ - Los mapas y puntos quedan guardados en el teléfono.
+ - ◎ seguir mi posición · 📍 marcar punto donde estoy · ∿ grabar recorrido · ☰ lista de puntos.
+ - Mantener apretado el mapa: crea un punto en ese lugar (ej. sitio de muestreo) y permite navegar hasta él (distancia y rumbo).
+ - ⋮ > Leyenda: escribir la dosis/valor de cada color; el panel muestra "Zona 73" al pararte encima.
+ - ⬠ Medir área: tocar el mapa para marcar vértices, "+ Mi posición" para cargar el vértice donde estás parado, o "Caminar contorno" (agrega un vértice cada 5 m con el GPS). Muestra ha y perímetro; se guarda con nombre y observación.
+ - ⋮ > Exportar: waypoints, áreas (polígonos con ha) y recorrido en KML o GeoJSON; waypoints en CSV.
+ - ⋮ > Mantener pantalla encendida / Brújula.
+
+LIMITACIONES
+ - Solo PDFs con georreferencia (GeoPDF). Un PDF común se ve, pero sin posición.
+ - Lee la página 1 del PDF.
+ - Grabar recorrido requiere la app abierta y en pantalla (los navegadores cortan el GPS en segundo plano).
+ - La precisión es la del GPS del teléfono (típico 3-10 m a cielo abierto).

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Mapa de campo · Viento Sur</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5a3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mapa campo">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f1ea;--ink:#1d2420;--mut:#5d675f;--acc:#1f5a3a;--acc2:#2d7a50;--line:#d9d3c5;--card:#fff;--me:#1565c0;--trk:#7b1fa2;--pt:#e65100;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.hidden{display:none!important}
+/* ---- home ---- */
+#home{position:fixed;inset:0;overflow:auto;padding:calc(var(--st) + 18px) 16px calc(var(--sb) + 24px)}
+#home h1{font-size:22px;margin:4px 0 2px;color:var(--acc)}
+#home .sub{color:var(--mut);font-size:14px;margin-bottom:18px}
+.bigbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;border-radius:14px;background:var(--acc);color:#fff;font-weight:600;font-size:17px}
+.maplist{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.mapitem{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.mapitem .t{flex:1;min-width:0}
+.mapitem .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mapitem .m{color:var(--mut);font-size:13px}
+.mapitem .geo{font-size:11px;padding:2px 6px;border-radius:6px;background:#e3efe7;color:var(--acc);margin-left:6px}
+.mapitem .geo.no{background:#f6e3dc;color:#a33}
+.iconbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--mut)}
+.empty{color:var(--mut);text-align:center;padding:30px 10px;font-size:14px}
+.note{margin-top:22px;font-size:13px;color:var(--mut);background:#ebe6da;border-radius:12px;padding:12px}
+/* ---- map ---- */
+#mapv{position:fixed;inset:0}
+#view{position:absolute;inset:0;touch-action:none;overflow:hidden;background:#fff}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#stage canvas{display:block}
+#ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+header{position:absolute;left:0;right:0;top:0;padding:calc(var(--st) + 6px) 8px 6px;display:flex;align-items:center;gap:6px;background:rgba(244,241,234,.94);border-bottom:1px solid var(--line)}
+header .title{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#gpsdot{width:10px;height:10px;border-radius:50%;background:#aaa;flex:none}
+#gpsdot.ok{background:#2e7d32}#gpsdot.mid{background:#f9a825}#gpsdot.bad{background:#c62828}
+.fabs{position:absolute;right:10px;bottom:calc(var(--ph,120px) + 18px);display:flex;flex-direction:column;gap:10px}
+.fab{width:54px;height:54px;border-radius:16px;background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.18);display:grid;place-items:center;color:var(--ink)}
+.fab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.fab.rec{background:#c62828;color:#fff;border-color:#c62828}
+#panel{position:absolute;left:8px;right:8px;bottom:calc(var(--sb) + 8px);background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+#zone{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700}
+#sw{width:26px;height:26px;border-radius:7px;border:1px solid rgba(0,0,0,.25);background:#eee;flex:none}
+#pos{color:var(--mut);font-size:13px;margin-top:2px;font-variant-numeric:tabular-nums}
+#tgt{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+#tgt .arr{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;background:#fff3e0;color:var(--pt)}
+#tgt .tx{flex:1;font-size:15px}#tgt .tx b{font-size:17px}
+#banner{position:absolute;left:8px;right:8px;top:calc(var(--st) + 58px);background:#fff3cd;border:1px solid #e7cf7a;border-radius:10px;padding:8px 10px;font-size:13px}
+#measbar{position:absolute;left:8px;right:8px;top:calc(var(--st) + 58px);background:#fff;border:2px solid #ff6f00;border-radius:12px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+#measbar .mt{font-size:15px}#measbar .mt b{font-size:19px}
+#measbar .mb{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+#measbar .mb button{padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:#fafafa;font-size:14px;font-weight:600}
+#measbar .mb button.on{background:#ff6f00;color:#fff;border-color:#ff6f00}
+#measbar .mb button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+/* ---- sheets ---- */
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--bg);border-radius:18px 18px 0 0;padding:14px 16px calc(var(--sb) + 16px);max-height:80vh;overflow:auto;box-shadow:0 -4px 20px rgba(0,0,0,.2)}
+.sheet h2{margin:0 0 10px;font-size:18px}
+.sheet label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+.sheet input,.sheet textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.sheet textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;padding:13px 10px;border-radius:12px;background:#fff;border:1px solid var(--line);font-weight:600;text-align:center}
+.btn.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn.dan{color:#b71c1c}
+.menuitem{display:flex;align-items:center;gap:12px;width:100%;padding:13px 6px;border-bottom:1px solid var(--line);text-align:left}
+.menuitem:last-child{border-bottom:0}
+.menuitem small{display:block;color:var(--mut);font-size:12px}
+.plist .menuitem b{font-weight:600}
+.meta{font-size:13px;color:var(--mut);margin-top:6px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--st) + 64px);background:#222;color:#fff;padding:9px 14px;border-radius:10px;font-size:14px;z-index:20;max-width:90vw;text-align:center}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:rgba(244,241,234,.85);z-index:30;font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ============ PANTALLA INICIO ============ -->
+<section id="home">
+  <h1>Mapa de campo</h1>
+  <div class="sub">Agroestudio Viento Sur · mapas GeoPDF con GPS, sin señal</div>
+  <button class="bigbtn" id="btnOpen">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Abrir PDF georreferenciado
+  </button>
+  <button class="bigbtn" id="btnBlank" style="margin-top:10px;background:#fff;color:var(--acc);border:2px solid var(--acc)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+    Usar sin mapa (waypoints y áreas)
+  </button>
+  <input type="file" id="file" accept="application/pdf,.pdf" class="hidden">
+  <div class="maplist" id="maplist"></div>
+  <div class="note">
+    <b>Uso sin señal:</b> cargá los mapas con internet (o desde un archivo ya descargado). Quedan guardados en el teléfono; en el lote abrís la app y el GPS funciona sin datos móviles.<br><br>
+    Sirve para PDFs exportados como <b>GeoPDF</b> (Xarvio, QGIS, John Deere Ops, Climate, etc.). Mantené apretado sobre el mapa para crear un punto y navegar hasta él.
+  </div>
+</section>
+
+<!-- ============ PANTALLA MAPA ============ -->
+<section id="mapv" class="hidden">
+  <div id="view">
+    <div id="stage"><canvas id="cv"></canvas></div>
+    <svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <header>
+    <button class="iconbtn" id="btnBack" aria-label="Volver"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <span id="gpsdot"></span>
+    <div class="title" id="mapTitle">Mapa</div>
+    <button class="iconbtn" id="btnMenu" aria-label="Menú"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+  </header>
+  <div id="banner" class="hidden"></div>
+  <div id="measbar" class="hidden"></div>
+  <div class="fabs">
+    <button class="fab" id="btnFollow" aria-label="Centrar en mi posición"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button>
+    <button class="fab" id="btnMark" aria-label="Marcar punto aquí"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><path d="M12 7v6M9 10h6" stroke-linecap="round"/></svg></button>
+    <button class="fab" id="btnTrack" aria-label="Grabar recorrido"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19c3-1 3-6 7-6s4 4 9-1"/><circle cx="4" cy="19" r="1.6" fill="currentColor"/><circle cx="20" cy="12" r="1.6" fill="currentColor"/></svg></button>
+    <button class="fab" id="btnArea" aria-label="Medir área"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 7l7-4 9 5-3 12-11-2z" fill="rgba(0,0,0,.08)"/><circle cx="4" cy="7" r="1.8" fill="currentColor"/><circle cx="11" cy="3" r="1.8" fill="currentColor"/><circle cx="20" cy="8" r="1.8" fill="currentColor"/><circle cx="17" cy="20" r="1.8" fill="currentColor"/><circle cx="6" cy="18" r="1.8" fill="currentColor"/></svg></button>
+    <button class="fab" id="btnPoints" aria-label="Lista de puntos"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.4" fill="currentColor"/><circle cx="4.5" cy="12" r="1.4" fill="currentColor"/><circle cx="4.5" cy="18" r="1.4" fill="currentColor"/></svg></button>
+  </div>
+  <div id="panel">
+    <div id="zone"><span id="sw"></span><span id="zoneTxt">Buscando GPS…</span></div>
+    <div id="pos">—</div>
+    <div id="tgt" class="hidden">
+      <div class="arr" id="tgtArr"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l6 18-6-4-6 4z"/></svg></div>
+      <div class="tx" id="tgtTxt"></div>
+      <button class="iconbtn" id="tgtClose" aria-label="Dejar de navegar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<div id="scrim" class="hidden"></div>
+<div id="sheet" class="sheet hidden"></div>
+<div id="toast" class="hidden"></div>
+<div id="loading" class="hidden">Cargando mapa…</div>
+
+<script src="pdf.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.js';
+
+/* =================== utilidades =================== */
+const R2D = 180/Math.PI, D2R = Math.PI/180;
+function haversine(a,b){const R=6371008.8,dLa=(b.lat-a.lat)*D2R,dLo=(b.lon-a.lon)*D2R;
+  const h=Math.sin(dLa/2)**2+Math.cos(a.lat*D2R)*Math.cos(b.lat*D2R)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function bearing(a,b){const y=Math.sin((b.lon-a.lon)*D2R)*Math.cos(b.lat*D2R),
+  x=Math.cos(a.lat*D2R)*Math.sin(b.lat*D2R)-Math.sin(a.lat*D2R)*Math.cos(b.lat*D2R)*Math.cos((b.lon-a.lon)*D2R);return (Math.atan2(y,x)*R2D+360)%360;}
+const card = d => ['N','NE','E','SE','S','SO','O','NO'][Math.round(d/45)%8];
+const fmtDist = m => m<1000 ? Math.round(m)+' m' : (m/1000).toLocaleString('es-AR',{maximumFractionDigits:2})+' km';
+const fmtCoord = v => v.toFixed(6);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg,ms=2200){const t=$('#toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.add('hidden'),ms);}
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+function ellip(lat){const a=6378137,e2=0.00669437999014,sn=Math.sin(lat*D2R),w=1-e2*sn*sn;return {M:a*(1-e2)/Math.pow(w,1.5),N:a/Math.sqrt(w)};}
+// área sobre el elipsoide WGS84 con proyección local (error despreciable a escala de lote)
+function polyStats(pts){const n=pts.length;let per=0,area=0;
+  for(let i=1;i<n;i++)per+=haversine({lat:pts[i-1][0],lon:pts[i-1][1]},{lat:pts[i][0],lon:pts[i][1]});
+  if(n>=3){per+=haversine({lat:pts[n-1][0],lon:pts[n-1][1]},{lat:pts[0][0],lon:pts[0][1]});
+    const la0=pts.reduce((a,p)=>a+p[0],0)/n,lo0=pts.reduce((a,p)=>a+p[1],0)/n,{M,N}=ellip(la0),c=Math.cos(la0*D2R);
+    const xy=pts.map(p=>[(p[1]-lo0)*D2R*N*c,(p[0]-la0)*D2R*M]);
+    for(let i=0;i<n;i++){const [x1,y1]=xy[i],[x2,y2]=xy[(i+1)%n];area+=x1*y2-x2*y1;} area=Math.abs(area)/2;}
+  return {ha:area/1e4,per,n};}
+const fmtHa = ha => ha.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ha';
+function inPoly(x,y,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,yi]=P[i],[xj,yj]=P[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
+
+/* =================== almacenamiento (IndexedDB) =================== */
+let db=null;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open('mapacampo',1);
+  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('pdfs',{keyPath:'id'});d.createObjectStore('maps',{keyPath:'id'});};
+  r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>res(null);}catch(e){res(null)}});}
+function store(name,mode){return db.transaction(name,mode).objectStore(name);}
+function dbReq(fn){return new Promise(res=>{if(!db)return res(null);try{const r=fn();r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);}catch(e){res(null)}});}
+const dbAll = n => dbReq(()=>store(n,'readonly').getAll()).then(r=>r||[]);
+const dbGet = (n,id) => dbReq(()=>store(n,'readonly').get(id));
+const dbPut = (n,v) => dbReq(()=>store(n,'readwrite').put(v));
+const dbDel = (n,id) => dbReq(()=>store(n,'readwrite').delete(id));
+// memoria de respaldo si IndexedDB no está disponible
+const memPdfs = {}, memMaps = {};
+
+/* =================== lectura de georreferencia GeoPDF =================== */
+// Soporta el estándar ISO 32000 / Adobe (/VP → /Viewport → /Measure /GEO con /GPTS y /LPTS),
+// que es lo que exportan Xarvio, QGIS/GDAL, ArcGIS, etc.
+function latin1(u8){let s='';const CH=0x8000;for(let i=0;i<u8.length;i+=CH)s+=String.fromCharCode.apply(null,u8.subarray(i,i+CH));return s;}
+async function inflate(bytes){const ds=new DecompressionStream('deflate');const w=ds.writable.getWriter();w.write(bytes).catch(()=>{});w.close().catch(()=>{});
+  return new Uint8Array(await new Response(ds.readable).arrayBuffer());}
+const arrOf = (body,key) => {const m=body.match(new RegExp('/'+key+'\\s*\\[([^\\]]*)\\]'));return m?m[1].trim().split(/\s+/).map(Number).filter(Number.isFinite):null;};
+
+async function parseGeo(buf){
+  const u8=new Uint8Array(buf), s=latin1(u8);
+  const objs=[]; const re=/(\d+)\s+(\d+)\s+obj\b([\s\S]*?)\bendobj/g; let m;
+  while((m=re.exec(s))){objs.push({n:+m[1],g:+m[2],body:m[3],start:re.lastIndex-6-m[3].length});}
+  // si no aparece /GPTS en texto plano, buscar dentro de object streams comprimidos
+  if(!s.includes('/GPTS') && 'DecompressionStream' in window){
+    for(const o of objs.slice()){
+      if(!/\/Type\s*\/ObjStm/.test(o.body)) continue;
+      try{
+        const si=o.body.indexOf('stream'); let st=si+6; if(o.body[st]==='\r')st++; if(o.body[st]==='\n')st++;
+        const lm=o.body.match(/\/Length\s+(\d+)(?!\s+\d+\s+R)/); const en=lm?st+ +lm[1]:o.body.lastIndexOf('endstream');
+        const raw=u8.subarray(o.start+st,o.start+en);
+        const txt=latin1(/FlateDecode/.test(o.body)?await inflate(raw):raw);
+        const N=+(o.body.match(/\/N\s+(\d+)/)||[])[1], F=+(o.body.match(/\/First\s+(\d+)/)||[])[1];
+        const hdr=txt.slice(0,F).trim().split(/\s+/).map(Number);
+        for(let i=0;i<N;i++){const a=F+hdr[2*i+1], b=i+1<N?F+hdr[2*i+3]:txt.length;objs.push({n:hdr[2*i],g:0,body:txt.slice(a,b)});}
+      }catch(e){}
+    }
+  }
+  const cands=[];
+  for(const o of objs){
+    if(!o.body.includes('/GPTS')) continue;
+    const G=arrOf(o.body,'GPTS'), L=arrOf(o.body,'LPTS'); if(!G||G.length<6) continue;
+    let bbox=null;
+    if(o.body.includes('/BBox')) bbox=arrOf(o.body,'BBox');
+    if(!bbox){const ref=new RegExp('/Measure\\s+'+o.n+'\\s+'+o.g+'\\s+R');const vp=objs.find(x=>ref.test(x.body));if(vp)bbox=arrOf(vp.body,'BBox');}
+    cands.push({G,L:L&&L.length===G.length?L:null,bbox});
+  }
+  if(!cands.length) return null;
+  const area=c=>c.bbox?Math.abs((c.bbox[2]-c.bbox[0])*(c.bbox[3]-c.bbox[1])):0;
+  cands.sort((a,b)=>area(b)-area(a));
+  return cands[0];
+}
+// mínimos cuadrados para z = c0 + c1*x + c2*y
+function fit3(xs,ys,zs){const n=xs.length;let A=[[0,0,0],[0,0,0],[0,0,0]],B=[0,0,0];
+  for(let i=0;i<n;i++){const r=[1,xs[i],ys[i]];for(let j=0;j<3;j++){B[j]+=r[j]*zs[i];for(let k=0;k<3;k++)A[j][k]+=r[j]*r[k];}}
+  for(let i=0;i<3;i++){let p=i;for(let r=i+1;r<3;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[B[i],B[p]]=[B[p],B[i]];
+    for(let r=i+1;r<3;r++){const f=A[r][i]/A[i][i];for(let k=i;k<3;k++)A[r][k]-=f*A[i][k];B[r]-=f*B[i];}}
+  const x=[0,0,0];for(let i=2;i>=0;i--){let s=B[i];for(let k=i+1;k<3;k++)s-=A[i][k]*x[k];x[i]=s/A[i][i];}return x;}
+function buildGeo(c,page){
+  const mb=page?page.view:[0,0,1,1];
+  const bb=c.bbox||mb; const bx0=Math.min(bb[0],bb[2]),by0=Math.min(bb[1],bb[3]),bw=Math.abs(bb[2]-bb[0]),bh=Math.abs(bb[3]-bb[1]);
+  const lat=[],lon=[],u=[],v=[];
+  for(let i=0;i<c.G.length/2;i++){lat.push(c.G[2*i]);lon.push(c.G[2*i+1]);
+    if(c.L){u.push(c.L[2*i]);v.push(c.L[2*i+1]);}else{/* sin LPTS: esquinas del bbox en orden estándar */u.push([0,0,1,1][i]??0);v.push([0,1,1,0][i]??0);}}
+  const lat0=lat.reduce((a,b)=>a+b)/lat.length, lon0=lon.reduce((a,b)=>a+b)/lon.length;
+  const X=lon.map(x=>x-lon0),Y=lat.map(y=>y-lat0);
+  return {bx0,by0,bw,bh,lat0,lon0,fu:fit3(X,Y,u),fv:fit3(X,Y,v),flon:fit3(u,v,lon),flat:fit3(u,v,lat),
+    box:{minLat:Math.min(...lat),maxLat:Math.max(...lat),minLon:Math.min(...lon),maxLon:Math.max(...lon)}};
+}
+
+/* =================== estado =================== */
+let cur=null;        // registro del mapa abierto {id,name,points,track,...}
+let pdfVp=null, G=null, cw=0, ch=0, kx=1, pxPerM=1, imgData=null, legend=[];
+let s=1,tx=0,ty=0, follow=false, rec=false;
+let meas=null;
+let me=null, heading=null, compassOn=false, target=null, watchId=null, wakeLock=null;
+const cv=$('#cv'), ctx=cv.getContext('2d',{willReadFrequently:true}), view=$('#view'), ov=$('#ov'), stage=$('#stage');
+
+function geoToPx(lat,lon){const X=lon-G.lon0,Y=lat-G.lat0;
+  const u=G.fu[0]+G.fu[1]*X+G.fu[2]*Y, v=G.fv[0]+G.fv[1]*X+G.fv[2]*Y;
+  return pdfVp.convertToViewportPoint(G.bx0+u*G.bw, G.by0+v*G.bh);}
+function pxToGeo(px,py){const [x,y]=pdfVp.convertToPdfPoint(px,py);const u=(x-G.bx0)/G.bw,v=(y-G.by0)/G.bh;
+  return {lat:G.flat[0]+G.flat[1]*u+G.flat[2]*v, lon:G.flon[0]+G.flon[1]*u+G.flon[2]*v};}
+const toScr = (px,py) => [px*s*kx+tx, py*s+ty];
+const fromScr = (x,y) => [(x-tx)/(s*kx), (y-ty)/s];
+
+/* =================== inicio / lista de mapas =================== */
+async function listMaps(){
+  const maps = db ? await dbAll('maps') : Object.values(memMaps);
+  maps.sort((a,b)=>(b.opened||b.added)-(a.opened||a.added));
+  const el=$('#maplist');
+  if(!maps.length){el.innerHTML='<div class="empty">Todavía no hay mapas guardados.</div>';return;}
+  el.innerHTML=maps.map(m=>`<div class="mapitem" data-id="${m.id}">
+     <div class="t" data-act="open"><div class="n">${esc(m.name)}<span class="geo ${m.geo?'':'no'}">${m.blank?'sin mapa':m.geo?'GPS':'sin georref.'}</span></div>
+     <div class="m">${new Date(m.added).toLocaleDateString('es-AR')} · ${(m.points||[]).length} puntos${(m.polys||[]).length?' · '+m.polys.length+' áreas':''}${(m.track||[]).length?' · con recorrido':''}</div></div>
+     <button class="iconbtn" data-act="more" aria-label="Opciones"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>`).join('');
+}
+$('#maplist').addEventListener('click',async e=>{
+  const it=e.target.closest('.mapitem'); if(!it) return; const act=e.target.closest('[data-act]')?.dataset.act; const id=it.dataset.id;
+  const m = db ? await dbGet('maps',id) : memMaps[id];
+  if(act==='open') openMap(id);
+  else if(act==='more') sheet(`<h2>${esc(m.name)}</h2>
+      <label>Nombre</label><input id="f_name" value="${esc(m.name)}">
+      <div class="row"><button class="btn pri" id="s_ok">Guardar nombre</button></div>
+      <div class="row"><button class="btn dan" id="s_del">Borrar mapa y sus puntos</button></div>`,sh=>{
+      sh.querySelector('#s_ok').onclick=async()=>{m.name=sh.querySelector('#f_name').value.trim()||m.name;await saveMap(m);closeSheet();listMaps();};
+      const del=sh.querySelector('#s_del');del.onclick=async()=>{if(!del.dataset.c){del.dataset.c=1;del.textContent='¿Seguro? Tocá de nuevo para borrar';return;}
+        if(db){await dbDel('maps',id);await dbDel('pdfs',id);}else{delete memMaps[id];delete memPdfs[id];}closeSheet();listMaps();};});
+});
+$('#btnOpen').onclick=()=>$('#file').click();
+$('#btnBlank').onclick=createBlank;
+$('#file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f) importPdf(f, f.name);};
+
+async function importPdf(blob,fname){
+  $('#loading').classList.remove('hidden');
+  try{
+    const buf=await blob.arrayBuffer();
+    const geo=await parseGeo(buf);
+    const id=uid();
+    let name=(fname||'mapa').replace(/\.pdf$/i,'');
+    // título de la leyenda (si existe) suele ser más descriptivo que el nombre de archivo
+    try{const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;const pg=await pdf.getPage(1);const tc=await pg.getTextContent();
+      const t=tc.items.map(i=>i.str.trim()).find(x=>/[A-Za-z]{3}/.test(x)&&x.length>8); if(t) name=t.replace(/_/g,' ').replace(/\s+-\s+/g,' – ');}catch(e){}
+    const rec={id,name,file:fname,added:Date.now(),geo:!!geo,points:[],track:[],polys:[]};
+    if(db){await dbPut('pdfs',{id,data:buf});await saveMap(rec);}else{memPdfs[id]=buf;memMaps[id]=rec;}
+    try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
+    await openMap(id);
+    if(!geo) toast('Este PDF no trae georreferencia: se ve el mapa pero no tu posición.',4000);
+  }catch(err){console.error(err);toast('No se pudo leer el PDF');}
+  finally{$('#loading').classList.add('hidden');}
+}
+async function saveMap(m){if(db)await dbPut('maps',m);else memMaps[m.id]=m;}
+let saveT=null; function saveSoon(){clearTimeout(saveT);saveT=setTimeout(()=>cur&&saveMap(cur),800);}
+
+/* =================== abrir y renderizar mapa =================== */
+async function openMap(id){
+  $('#loading').classList.remove('hidden');
+  try{
+    cur = db ? await dbGet('maps',id) : memMaps[id];
+    cur.opened=Date.now(); cur.polys=cur.polys||[]; saveMap(cur);
+    let page=null, scale=1;
+    if(cur.blank){renderBlank();}
+    else{
+    const p = db ? await dbGet('pdfs',id) : {data:memPdfs[id]};
+    const buf=p.data;
+    const geo=await parseGeo(buf);
+    const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise;
+    page=await pdf.getPage(1);
+    const v1=page.getViewport({scale:1});
+    scale=Math.min(3072/Math.max(v1.width,v1.height), 4);
+    pdfVp=page.getViewport({scale}); cw=cv.width=Math.floor(pdfVp.width); ch=cv.height=Math.floor(pdfVp.height);
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,cw,ch);
+    await page.render({canvasContext:ctx,viewport:pdfVp}).promise;
+    imgData=ctx.getImageData(0,0,cw,ch);
+    G = geo ? buildGeo(geo,page) : null;
+    }
+    // corrección de proporción: igualar píxeles por metro en E-O y N-S (forma real del lote)
+    kx=1; pxPerM=1;
+    if(G){const c={lat:(G.box.minLat+G.box.maxLat)/2,lon:(G.box.minLon+G.box.maxLon)/2};
+      const p0=geoToPx(c.lat,c.lon), mLat=1/111320, mLon=1/(111320*Math.cos(c.lat*D2R));
+      const pe=geoToPx(c.lat,c.lon+100*mLon), pn=geoToPx(c.lat+100*mLat,c.lon);
+      const e=Math.hypot(pe[0]-p0[0],pe[1]-p0[1])/100, n=Math.hypot(pn[0]-p0[0],pn[1]-p0[1])/100;
+      kx=Math.min(2,Math.max(.5,n/e)); pxPerM=n;}
+    legend=page?extractLegend(await page.getTextContent(),scale):[];
+    if(cur.blank) cur.legend=[];
+    if(!cur.legend){cur.legend=detectColors();
+      for(const L of cur.legend){let b=null,bd=40;for(const t of legend){const d=Math.hypot(t.rgb[0]-L.rgb[0],t.rgb[1]-L.rgb[1],t.rgb[2]-L.rgb[2]);if(d<bd){bd=d;b=t;}}if(b)L.label=b.label;}
+      saveMap(cur);
+      if(G&&cur.legend.length&&cur.legend.some(l=>!l.label)) setTimeout(()=>toast('Tip: en ⋮ › Leyenda podés poner la dosis de cada color',4000),1200);}
+    $('#mapTitle').textContent=cur.name;
+    const bn=$('#banner'); if(!G){bn.textContent='PDF sin georreferencia: podés ver el mapa, pero no se puede ubicar el GPS. Exportalo como GeoPDF.';bn.classList.remove('hidden');}else bn.classList.add('hidden');
+    $('#home').classList.add('hidden'); $('#mapv').classList.remove('hidden');
+    target=null; follow=false; rec=false; meas=null; $('#measbar').classList.add('hidden'); updBtns();
+    fitView();
+    if(cur.blank){const W=view.clientWidth;s=Math.max(s,W/(700/BLANK_MPP));centerOn(cur.center.lat,cur.center.lon);}
+    startGPS(); updatePanel();
+  }catch(err){console.error(err);toast('Error al abrir el mapa');}
+  finally{$('#loading').classList.add('hidden');}
+}
+/* ---- mapa en blanco: cuadrícula georreferenciada alrededor de un centro ---- */
+const BLANK_M=5000, BLANK_MPP=2; // 5 x 5 km, 2 m por píxel
+function renderBlank(){
+  const c=cur.center, W=BLANK_M/BLANK_MPP, {M,N}=ellip(c.lat);
+  const dLat=(BLANK_M/2)/M*R2D, dLon=(BLANK_M/2)/(N*Math.cos(c.lat*D2R))*R2D;
+  cw=cv.width=W; ch=cv.height=W;
+  pdfVp={convertToViewportPoint:(x,y)=>[x,y],convertToPdfPoint:(x,y)=>[x,y]};
+  // esquinas: NO, NE, SE, SO  -> (u,v) con v=0 arriba
+  G=buildGeo({G:[c.lat+dLat,c.lon-dLon, c.lat+dLat,c.lon+dLon, c.lat-dLat,c.lon+dLon, c.lat-dLat,c.lon-dLon],
+              L:[0,0, 1,0, 1,1, 0,1], bbox:[0,0,W,W]},null);
+  ctx.fillStyle='#f3f1ea';ctx.fillRect(0,0,W,W);
+  for(let m=0;m<=BLANK_M;m+=100){const q=m/BLANK_MPP+.5;const major=m%500===0;
+    ctx.strokeStyle=major?'#c9c3b3':'#e2ddd0';ctx.lineWidth=major?1.5:1;
+    ctx.beginPath();ctx.moveTo(q,0);ctx.lineTo(q,W);ctx.moveTo(0,q);ctx.lineTo(W,q);ctx.stroke();}
+  ctx.fillStyle='#9a927f';ctx.font='bold 14px system-ui,sans-serif';
+  for(let m=500;m<BLANK_M;m+=500){ctx.fillText((m-BLANK_M/2)+' m',m/BLANK_MPP+4,16);ctx.fillText((BLANK_M/2-m)+' m',4,m/BLANK_MPP-4);}
+  const q=W/2;ctx.strokeStyle='#8d846f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(q-12,q);ctx.lineTo(q+12,q);ctx.moveTo(q,q-12);ctx.lineTo(q,q+12);ctx.stroke();
+  ctx.fillText('N ↑',q-10,30);
+  imgData=ctx.getImageData(0,0,W,W);
+}
+async function createBlank(){
+  if(!('geolocation' in navigator)){toast('Este navegador no da GPS');return;}
+  $('#loading').textContent='Buscando posición GPS…';$('#loading').classList.remove('hidden');
+  navigator.geolocation.getCurrentPosition(async p=>{
+    $('#loading').classList.add('hidden');$('#loading').textContent='Cargando mapa…';
+    const id=uid(), d=new Date();
+    const rec={id,name:'Sin mapa · '+d.toLocaleDateString('es-AR')+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),blank:true,
+      center:{lat:p.coords.latitude,lon:p.coords.longitude},added:Date.now(),geo:true,points:[],track:[],polys:[]};
+    await saveMap(rec); openMap(id);
+  },err=>{$('#loading').classList.add('hidden');$('#loading').textContent='Cargando mapa…';
+    toast(err.code===1?'Permiso de ubicación denegado':'No se obtuvo señal GPS. Probá a cielo abierto.',3500);},
+  {enableHighAccuracy:true,timeout:45000,maximumAge:5000});
+}
+function fitView(){const W=view.clientWidth,H=view.clientHeight;const top=60,bot=150;
+  s=Math.min((W-20)/(cw*kx),(H-top-bot)/ch); tx=(W-cw*kx*s)/2; ty=top+(H-top-bot-ch*s)/2; apply();}
+function apply(){stage.style.transform=`translate(${tx}px,${ty}px) scale(${s*kx},${s})`;draw();}
+$('#btnBack').onclick=()=>{stopGPS();cur&&saveMap(cur);$('#mapv').classList.add('hidden');$('#home').classList.remove('hidden');listMaps();};
+
+/* ---- leyenda: números con un recuadro de color a la izquierda ---- */
+function pix(x,y){x=Math.round(x);y=Math.round(y);if(!imgData||x<0||y<0||x>=cw||y>=ch)return null;const i=(y*cw+x)*4,d=imgData.data;return [d[i],d[i+1],d[i+2]];}
+const isWhite=c=>c[0]>238&&c[1]>238&&c[2]>238;
+function extractLegend(tc,scale){
+  const out=[];
+  for(const it of tc.items){const t=it.str.trim(); if(!/^-?\d+([.,]\d+)?$/.test(t)) continue;
+    const [,,c,d,e,f]=it.transform; const h=Math.hypot(c,d)||8;
+    const [px,py]=pdfVp.convertToViewportPoint(e,f+h*0.35);
+    for(let dx=Math.round(2*scale);dx<45*scale;dx++){const col=pix(px-dx,py);if(!col)break;
+      if(!isWhite(col)&&Math.max(...col)-Math.min(...col)>12){ // recuadro de color (no texto gris/negro)
+        const c2=pix(px-dx-3*scale,py)||col; const val=parseFloat(t.replace(',','.'));
+        out.push({label:val.toLocaleString('es-AR',{maximumFractionDigits:2}),rgb:c2});break;}}
+  }
+  return out;
+}
+function detectColors(){
+  const d=imgData.data, cnt=new Map(); let tot=0;
+  for(let y=0;y<ch;y+=3)for(let x=0;x<cw;x+=3){const i=(y*cw+x)*4,r=d[i],g=d[i+1],b=d[i+2];
+    if(r>238&&g>238&&b>238)continue; const mx=Math.max(r,g,b),mn=Math.min(r,g,b); if(mx-mn<14&&mx<170)continue; // texto/lineas
+    const k=(r>>3)<<10|(g>>3)<<5|(b>>3); cnt.set(k,(cnt.get(k)||0)+1); tot++;}
+  const arr=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([k,n])=>({rgb:[((k>>10)&31)*8+4,((k>>5)&31)*8+4,(k&31)*8+4],n}));
+  const out=[]; for(const c of arr){const m=out.find(o=>Math.hypot(o.rgb[0]-c.rgb[0],o.rgb[1]-c.rgb[1],o.rgb[2]-c.rgb[2])<34);
+    if(m)m.n+=c.n; else if(c.n>tot*0.004) out.push({...c});}
+  return out.filter(o=>o.n>tot*0.01).slice(0,12).map(o=>({rgb:o.rgb,label:''}));
+}
+function zoneAt(px,py){
+  let r=0,g=0,b=0,n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const c=pix(px+dx,py+dy);if(c){r+=c[0];g+=c[1];b+=c[2];n++;}}
+  if(!n) return null; const c=[r/n,g/n,b/n];
+  let best=null,bd=1e9;for(const L of (cur&&cur.legend)||[]){const d=Math.hypot(c[0]-L.rgb[0],c[1]-L.rgb[1],c[2]-L.rgb[2]);if(d<bd){bd=d;best=L;}}
+  return {rgb:c, white:isWhite(c), hit:!!(best&&bd<40), val:best&&bd<40&&best.label?best.label:null};
+}
+
+/* =================== GPS =================== */
+function startGPS(){
+  if(!('geolocation' in navigator)){$('#zoneTxt').textContent='Este navegador no da GPS';return;}
+  if(watchId!=null) return;
+  watchId=navigator.geolocation.watchPosition(onPos,err=>{
+    $('#gpsdot').className='bad';
+    $('#zoneTxt').textContent = err.code===1?'Permiso de ubicación denegado':'Sin señal GPS…';},
+    {enableHighAccuracy:true,maximumAge:1000,timeout:30000});
+}
+function stopGPS(){if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;}}
+function onPos(p){
+  const c=p.coords; me={lat:c.latitude,lon:c.longitude,acc:c.accuracy,t:p.timestamp};
+  if(!compassOn) heading = (c.heading!=null && !isNaN(c.heading) && (c.speed||0)>0.6) ? c.heading : heading;
+  $('#gpsdot').className = c.accuracy<=10?'ok':c.accuracy<=30?'mid':'bad';
+  if(rec && cur && c.accuracy<=30){const tr=cur.track,last=tr[tr.length-1];
+    if(!last||haversine({lat:last[0],lon:last[1]},me)>=3){tr.push([+me.lat.toFixed(7),+me.lon.toFixed(7),Math.round(p.timestamp/1000)]);saveSoon();}}
+  if(meas&&meas.auto&&c.accuracy<=15){const l=meas.pts[meas.pts.length-1];
+    if(!l||haversine({lat:l[0],lon:l[1]},me)>=5){meas.pts.push([+me.lat.toFixed(7),+me.lon.toFixed(7)]);measBar();}}
+  if(follow&&G) centerOn(me.lat,me.lon,false);
+  draw(); updatePanel();
+}
+function centerOn(lat,lon,anim){const [px,py]=geoToPx(lat,lon);const W=view.clientWidth,H=view.clientHeight;
+  tx=W/2-px*s*kx; ty=(H-90)/2-py*s; apply();}
+
+/* ---- brújula (opcional) ---- */
+function onOrient(e){let h=null;
+  if(e.webkitCompassHeading!=null) h=e.webkitCompassHeading;
+  else if(e.absolute&&e.alpha!=null) h=360-e.alpha;
+  if(h==null) return; const so=(screen.orientation&&screen.orientation.angle)||window.orientation||0;
+  heading=(h+so+360)%360; drawSoon(); updatePanel();}
+async function toggleCompass(){
+  if(compassOn){window.removeEventListener('deviceorientationabsolute',onOrient);window.removeEventListener('deviceorientation',onOrient);compassOn=false;heading=null;toast('Brújula desactivada');draw();return;}
+  try{if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){const r=await DeviceOrientationEvent.requestPermission();if(r!=='granted'){toast('Permiso de brújula denegado');return;}}}catch(e){}
+  if('ondeviceorientationabsolute' in window) window.addEventListener('deviceorientationabsolute',onOrient);
+  else window.addEventListener('deviceorientation',onOrient);
+  compassOn=true; toast('Brújula activada: el cono azul marca hacia dónde mira el teléfono');
+}
+async function toggleWake(){
+  try{if(wakeLock){await wakeLock.release();wakeLock=null;toast('Pantalla: normal');return;}
+    wakeLock=await navigator.wakeLock.request('screen');toast('La pantalla queda encendida');
+    wakeLock.addEventListener('release',()=>{});}catch(e){toast('Este teléfono no permite mantener la pantalla encendida desde la app');}
+}
+document.addEventListener('visibilitychange',async()=>{if(wakeLock&&document.visibilityState==='visible'){try{wakeLock=await navigator.wakeLock.request('screen');}catch(e){}}});
+
+/* =================== dibujo de capas =================== */
+let drawPending=false; function drawSoon(){if(!drawPending){drawPending=true;requestAnimationFrame(()=>{drawPending=false;draw();});}}
+function draw(){
+  if(!cur||!G){ov.innerHTML='';return;}
+  let h='';
+  // recorrido
+  if(cur.track.length>1){h+=`<polyline points="${cur.track.map(p=>toScr(...geoToPx(p[0],p[1])).map(v=>v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="#7b1fa2" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>`;}
+  // áreas guardadas
+  for(const a of cur.polys||[]){const P=a.pts.map(p=>toScr(...geoToPx(p[0],p[1])));
+    h+=`<polygon points="${P.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="rgba(0,121,107,.16)" stroke="#00796b" stroke-width="2.5"/>`;
+    const cx=P.reduce((s,p)=>s+p[0],0)/P.length,cy=P.reduce((s,p)=>s+p[1],0)/P.length;
+    h+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="13" font-weight="700" fill="#004d40" stroke="#fff" stroke-width="3.5" paint-order="stroke">${esc(a.name)} · ${fmtHa(a.ha)}</text>`;}
+  // medición en curso
+  if(meas&&meas.pts.length){const P=meas.pts.map(p=>toScr(...geoToPx(p[0],p[1])));const pts=P.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    h+= P.length>=3?`<polygon points="${pts}" fill="rgba(255,160,0,.25)" stroke="#ff6f00" stroke-width="3" stroke-dasharray="7 5"/>`:`<polyline points="${pts}" fill="none" stroke="#ff6f00" stroke-width="3" stroke-dasharray="7 5"/>`;
+    if(meas.auto&&me){const m2=toScr(...geoToPx(me.lat,me.lon)),l=P[P.length-1];h+=`<line x1="${l[0]}" y1="${l[1]}" x2="${m2[0]}" y2="${m2[1]}" stroke="#ff6f00" stroke-width="2" opacity=".6"/>`;}
+    P.forEach((p,i)=>h+=`<circle cx="${p[0]}" cy="${p[1]}" r="${i===0?7:5.5}" fill="#fff" stroke="#ff6f00" stroke-width="3"/>`);}
+  // línea a destino
+  if(me&&target){const a=toScr(...geoToPx(me.lat,me.lon)),b=toScr(...geoToPx(target.lat,target.lon));
+    h+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#e65100" stroke-width="3" stroke-dasharray="8 6"/>`;}
+  // puntos
+  const showLbl = s*pxPerM > 0.15;
+  for(const p of cur.points){const [x,y]=toScr(...geoToPx(p.lat,p.lon));const sel=target&&target.id===p.id;
+    h+=`<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><path d="M0 0 C-3 -7 -10 -11 -10 -18 A10 10 0 1 1 10 -18 C10 -11 3 -7 0 0Z" fill="${sel?'#e65100':'#ff8f00'}" stroke="#fff" stroke-width="2"/><circle cy="-18" r="3.6" fill="#fff"/>`+
+       (showLbl?`<text y="-32" text-anchor="middle" font-size="13" font-weight="700" fill="#1d2420" stroke="#fff" stroke-width="3.5" paint-order="stroke">${esc(p.name)}</text>`:'')+`</g>`;}
+  // yo
+  if(me){const [x,y]=toScr(...geoToPx(me.lat,me.lon)); const r=Math.max(me.acc*pxPerM*s,0);
+    h+=`<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(21,101,192,.13)" stroke="rgba(21,101,192,.45)" stroke-width="1"/>`;
+    if(heading!=null){ // la vista ya está corregida a forma real y norte arriba: el rumbo es el ángulo en pantalla
+      h+=`<g transform="translate(${x},${y}) rotate(${heading})"><path d="M0 0 L-17 -42 A45 45 0 0 1 17 -42Z" fill="rgba(21,101,192,.35)"/></g>`;}
+    h+=`<circle cx="${x}" cy="${y}" r="9" fill="#1565c0" stroke="#fff" stroke-width="3"/>`;}
+  ov.innerHTML=h;
+}
+function updatePanel(){requestAnimationFrame(()=>{const P=$('#panel');$('#mapv').style.setProperty('--ph',(P.getBoundingClientRect().height+(innerHeight-P.getBoundingClientRect().bottom))+'px');});
+  const zt=$('#zoneTxt'), sw=$('#sw'), pos=$('#pos');
+  if(!G){zt.textContent='Sin georreferencia';sw.style.background='#eee';pos.textContent='';}
+  else if(!me){/* mantener mensaje de búsqueda */}
+  else{
+    pos.textContent=`±${Math.round(me.acc)} m · ${fmtCoord(me.lat)}, ${fmtCoord(me.lon)}`;
+    const [px,py]=geoToPx(me.lat,me.lon);
+    if(px<0||py<0||px>=cw||py>=ch){
+      const c={lat:(G.box.minLat+G.box.maxLat)/2,lon:(G.box.minLon+G.box.maxLon)/2};
+      zt.textContent=cur.blank?'Fuera de la cuadrícula (⋮ › Recentrar)':`Fuera del mapa · ${fmtDist(haversine(me,c))} al ${card(bearing(me,c))}`;sw.style.background='#eee';
+    }else if(cur.blank){sw.style.background='#f3f1ea';zt.textContent='Sin mapa de fondo';
+    }else{const z=zoneAt(px,py); sw.style.background=`rgb(${z.rgb.map(Math.round).join(',')})`;
+      zt.textContent = z.white ? 'Fuera de zona' : z.val!=null ? `Zona ${z.val}` : z.hit ? 'Zona sin valor (ver Leyenda)' : 'Dentro del mapa';}
+  }
+  const tg=$('#tgt');
+  if(target){tg.classList.remove('hidden');
+    if(me){const d=haversine(me,target),b=bearing(me,target);
+      const rel = heading!=null ? (b-heading+360)%360 : b;
+      $('#tgtArr').style.transform=`rotate(${rel}deg)`;
+      $('#tgtTxt').innerHTML=`<b>${esc(target.name)}</b> · ${fmtDist(d)}<br><span style="color:var(--mut);font-size:13px">rumbo ${Math.round(b)}° (${card(b)})${heading!=null?' · flecha relativa a tu dirección':' · flecha respecto al norte'}</span>`;
+      if(d>15)target._far=1;
+      if(d<5&&target._far&&!target._arr){target._arr=1;navigator.vibrate&&navigator.vibrate([80,60,80]);toast('Llegaste a '+target.name);}
+    }else $('#tgtTxt').innerHTML=`<b>${esc(target.name)}</b> · esperando GPS…`;
+  }else tg.classList.add('hidden');
+}
+$('#tgtClose').onclick=()=>{target=null;draw();updatePanel();};
+
+/* =================== gestos: arrastrar, pellizcar, tocar, mantener =================== */
+const ptrs=new Map(); let gest=null, down=null, lpT=null, lastTap=0;
+function vpt(e){const r=view.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+function startGest(){const p=[...ptrs.values()];
+  if(p.length===1) gest={t:'pan',x:p[0].x,y:p[0].y,tx,ty};
+  else if(p.length>=2){const [a,b]=p;gest={t:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y)||1,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,s,tx,ty};}}
+view.addEventListener('pointerdown',e=>{view.setPointerCapture(e.pointerId);const q=vpt(e);ptrs.set(e.pointerId,q);
+  if(ptrs.size===1){down={...q,moved:false,lp:false};clearTimeout(lpT);lpT=setTimeout(()=>{if(down&&!down.moved){down.lp=true;longPress(down.x,down.y);}},650);}
+  else{clearTimeout(lpT);if(down)down.moved=true;}
+  startGest();});
+view.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;const q=vpt(e);ptrs.set(e.pointerId,q);
+  if(down&&!down.moved&&Math.hypot(q.x-down.x,q.y-down.y)>8){down.moved=true;clearTimeout(lpT);}
+  if(!gest||(down&&!down.moved&&ptrs.size===1))return;
+  if(gest.t==='pan'){tx=gest.tx+q.x-gest.x;ty=gest.ty+q.y-gest.y;}
+  else{const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const ns=clampS(gest.s*d/gest.d);
+    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;const px=(gest.mx-gest.tx)/(gest.s*kx),py=(gest.my-gest.ty)/gest.s;
+    s=ns;tx=mx-px*s*kx;ty=my-py*s;}
+  if(follow){follow=false;updBtns();}
+  apply();});
+function endPtr(e){if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);clearTimeout(lpT);
+  if(ptrs.size===0){if(down&&!down.moved&&!down.lp)tap(down.x,down.y);down=null;gest=null;}else startGest();}
+view.addEventListener('pointerup',endPtr);view.addEventListener('pointercancel',endPtr);
+view.addEventListener('wheel',e=>{e.preventDefault();const q=vpt(e);zoomAt(q.x,q.y,Math.exp(-e.deltaY*0.0015));},{passive:false});
+function clampS(v){const W=view.clientWidth,H=view.clientHeight;const f=Math.min(W/(cw*kx),H/ch);return Math.max(f*0.4,Math.min(f*25,v));}
+function zoomAt(x,y,k){const px=(x-tx)/(s*kx),py=(y-ty)/s;s=clampS(s*k);tx=x-px*s*kx;ty=y-py*s;apply();}
+function tap(x,y){
+  if(meas){const [px,py]=fromScr(x,y);const g=pxToGeo(px,py);meas.pts.push([+g.lat.toFixed(7),+g.lon.toFixed(7)]);navigator.vibrate&&navigator.vibrate(15);measBar();return;}
+  if(cur&&G){let best=null,bd=28;for(const p of cur.points){const [sx,sy]=toScr(...geoToPx(p.lat,p.lon));const d=Math.hypot(sx-x,sy-18-y);if(d<bd){bd=d;best=p;}}
+    if(best){pointSheet(best);return;}
+    for(const a of (cur.polys||[]).slice().reverse()){const P=a.pts.map(p=>toScr(...geoToPx(p[0],p[1])));if(inPoly(x,y,P)){polySheet(a);return;}}}
+  const now=Date.now(); if(now-lastTap<320){zoomAt(x,y,2);lastTap=0;} else lastTap=now;
+}
+function longPress(x,y){if(!G){toast('Este mapa no tiene georreferencia');return;}
+  if(meas){tap(x,y);return;}
+  navigator.vibrate&&navigator.vibrate(30);const [px,py]=fromScr(x,y);const g=pxToGeo(px,py);newPoint(g.lat,g.lon,null,'Punto marcado en el mapa');}
+
+/* =================== puntos =================== */
+function nextName(){let n=1;const names=new Set(cur.points.map(p=>p.name));while(names.has('P'+n))n++;return 'P'+n;}
+function newPoint(lat,lon,acc,title){
+  const name=nextName();
+  const z=(()=>{const [px,py]=geoToPx(lat,lon);return (px>=0&&py>=0&&px<cw&&py<ch)?zoneAt(px,py):null;})();
+  sheet(`<h2>${esc(title)}</h2>
+    <div class="meta">${fmtCoord(lat)}, ${fmtCoord(lon)}${acc!=null?` · ±${Math.round(acc)} m`:''}${z&&z.val?` · zona ${z.val}`:''}</div>
+    <label>Nombre</label><input id="f_name" value="${name}">
+    <label>Observación</label><textarea id="f_note" placeholder="Ej: rama negra 3-4 hojas, 10% sup."></textarea>
+    <div class="row"><button class="btn" id="s_cancel">Cancelar</button><button class="btn pri" id="s_ok">Guardar punto</button></div>
+    <div class="row"><button class="btn" id="s_go">Guardar y navegar hasta acá</button></div>`, sh=>{
+    const save=()=>{const p={id:uid(),name:sh.querySelector('#f_name').value.trim()||name,note:sh.querySelector('#f_note').value.trim(),lat,lon,acc:acc!=null?Math.round(acc):null,zone:z&&z.val||null,t:Date.now()};
+      cur.points.push(p);saveSoon();closeSheet();draw();return p;};
+    sh.querySelector('#s_ok').onclick=()=>{save();toast('Punto guardado');};
+    sh.querySelector('#s_go').onclick=()=>{target=save();draw();updatePanel();};
+    sh.querySelector('#s_cancel').onclick=closeSheet;});
+}
+function pointSheet(p){
+  const d=me?` · a ${fmtDist(haversine(me,p))} (${card(bearing(me,p))})`:'';
+  sheet(`<h2>${esc(p.name)}</h2>
+    <div class="meta">${fmtCoord(p.lat)}, ${fmtCoord(p.lon)}${p.zone?` · zona ${esc(p.zone)}`:''}${d}<br>${new Date(p.t).toLocaleString('es-AR')}</div>
+    <label>Nombre</label><input id="f_name" value="${esc(p.name)}">
+    <label>Observación</label><textarea id="f_note">${esc(p.note)}</textarea>
+    <div class="row"><button class="btn pri" id="s_go">Navegar hasta acá</button><button class="btn" id="s_ok">Guardar cambios</button></div>
+    <div class="row"><button class="btn dan" id="s_del">Borrar punto</button></div>`, sh=>{
+    const upd=()=>{p.name=sh.querySelector('#f_name').value.trim()||p.name;p.note=sh.querySelector('#f_note').value.trim();saveSoon();};
+    sh.querySelector('#s_ok').onclick=()=>{upd();closeSheet();draw();};
+    sh.querySelector('#s_go').onclick=()=>{upd();target=p;delete p._arr;delete p._far;closeSheet();draw();updatePanel();};
+    const del=sh.querySelector('#s_del');del.onclick=()=>{if(!del.dataset.c){del.dataset.c=1;del.textContent='¿Seguro? Tocá de nuevo';return;}
+      cur.points=cur.points.filter(x=>x!==p);if(target===p)target=null;saveSoon();closeSheet();draw();updatePanel();};});
+}
+function pointsList(){
+  const pts=cur.points.slice().sort((a,b)=>me?haversine(me,a)-haversine(me,b):a.t-b.t);
+  sheet(`<h2>Waypoints (${pts.length})</h2><div class="plist">${pts.length?pts.map(p=>`<button class="menuitem" data-id="${p.id}"><div style="flex:1"><b>${esc(p.name)}</b>${p.zone?` · zona ${esc(p.zone)}`:''}<small>${esc(p.note||'sin observación')}</small></div><span style="color:var(--mut);font-size:14px">${me?fmtDist(haversine(me,p)):''}</span></button>`).join(''):'<div class="empty">Sin puntos. Usá el botón de marcar o mantené apretado el mapa.</div>'}</div>
+    ${cur.polys.length?`<h2 style="margin-top:16px">Áreas (${cur.polys.length})</h2>`+cur.polys.map(a=>`<button class="menuitem" data-pid="${a.id}"><div style="flex:1"><b>${esc(a.name)}</b><small>${esc(a.note||'sin observación')}</small></div><span style="font-weight:600">${fmtHa(a.ha)}</span></button>`).join(''):''}
+    <div class="row"><button class="btn" id="s_exp">Exportar (KML, GeoJSON, CSV)</button></div>`, sh=>{
+    sh.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{const a=cur.polys.find(x=>x.id===b.dataset.pid);closeSheet();
+      const P=a.pts.map(p=>geoToPx(p[0],p[1]));const cx=P.reduce((s,p)=>s+p[0],0)/P.length,cy=P.reduce((s,p)=>s+p[1],0)/P.length;
+      follow=false;updBtns();tx=view.clientWidth/2-cx*s*kx;ty=(view.clientHeight-90)/2-cy*s;apply();polySheet(a);});
+    sh.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{const p=cur.points.find(x=>x.id===b.dataset.id);closeSheet();
+      const [px,py]=geoToPx(p.lat,p.lon);follow=false;updBtns();const W=view.clientWidth,H=view.clientHeight;tx=W/2-px*s*kx;ty=(H-90)/2-py*s;apply();pointSheet(p);});
+    sh.querySelector('#s_exp').onclick=exportSheet;});
+}
+
+/* =================== medir área =================== */
+function measBar(){const b=$('#measbar');if(!meas){b.classList.add('hidden');draw();return;}
+  const st=polyStats(meas.pts);
+  b.innerHTML=`<div class="mt"><b>${fmtHa(st.ha)}</b> · perímetro ${fmtDist(st.per)} · ${st.n} vértices</div>
+   <div class="mb"><button data-m="gps">+ Mi posición</button><button data-m="auto" class="${meas.auto?'on':''}">${meas.auto?'Caminando…':'Caminar contorno'}</button><button data-m="undo">Deshacer</button><button data-m="cancel">Cancelar</button><button data-m="save" class="pri">Guardar</button></div>`;
+  b.classList.remove('hidden');draw();}
+$('#measbar').addEventListener('click',e=>{const a=e.target.closest('[data-m]')?.dataset.m;if(!a||!meas)return;
+  if(a==='gps'){if(!me){toast('Esperando GPS…');return;}meas.pts.push([+me.lat.toFixed(7),+me.lon.toFixed(7)]);measBar();}
+  if(a==='auto'){if(!meas.auto&&!me){toast('Esperando GPS…');return;}meas.auto=!meas.auto;
+    if(meas.auto){toast('Caminá o recorré el borde: agrega un vértice cada 5 m. Mantené la app abierta.',3500);if(!follow){follow=true;updBtns();centerOn(me.lat,me.lon);}}measBar();}
+  if(a==='undo'){meas.pts.pop();measBar();}
+  if(a==='cancel'){const b=e.target;if(meas.pts.length>2&&!b.dataset.c){b.dataset.c=1;b.textContent='¿Descartar?';return;}meas=null;measBar();}
+  if(a==='save'){if(meas.pts.length<3){toast('Hacen falta al menos 3 vértices');return;}
+    const st=polyStats(meas.pts);let n=1;const names=new Set(cur.polys.map(p=>p.name));while(names.has('Área '+n))n++;
+    sheet(`<h2>Guardar área</h2><div class="meta">${fmtHa(st.ha)} · perímetro ${fmtDist(st.per)} · ${st.n} vértices</div>
+      <label>Nombre</label><input id="f_name" value="Área ${n}"><label>Observación</label><textarea id="f_note" placeholder="Ej: manchón de sorgo de Alepo"></textarea>
+      <div class="row"><button class="btn" id="s_cancel">Seguir midiendo</button><button class="btn pri" id="s_ok">Guardar</button></div>`,sh=>{
+      sh.querySelector('#s_cancel').onclick=closeSheet;
+      sh.querySelector('#s_ok').onclick=()=>{cur.polys.push({id:uid(),name:sh.querySelector('#f_name').value.trim()||('Área '+n),note:sh.querySelector('#f_note').value.trim(),pts:meas.pts.slice(),ha:+st.ha.toFixed(4),per:Math.round(st.per),t:Date.now()});
+        saveSoon();meas=null;closeSheet();measBar();toast('Área guardada: '+fmtHa(st.ha));};});}
+});
+function polySheet(a){
+  sheet(`<h2>${esc(a.name)}</h2><div class="meta"><b style="font-size:17px;color:var(--ink)">${fmtHa(a.ha)}</b> · perímetro ${fmtDist(a.per)} · ${a.pts.length} vértices<br>${new Date(a.t).toLocaleString('es-AR')}</div>
+    <label>Nombre</label><input id="f_name" value="${esc(a.name)}"><label>Observación</label><textarea id="f_note">${esc(a.note)}</textarea>
+    <div class="row"><button class="btn pri" id="s_ok">Guardar cambios</button></div><div class="row"><button class="btn dan" id="s_del">Borrar área</button></div>`,sh=>{
+    sh.querySelector('#s_ok').onclick=()=>{a.name=sh.querySelector('#f_name').value.trim()||a.name;a.note=sh.querySelector('#f_note').value.trim();saveSoon();closeSheet();draw();};
+    const del=sh.querySelector('#s_del');del.onclick=()=>{if(!del.dataset.c){del.dataset.c=1;del.textContent='¿Seguro? Tocá de nuevo';return;}cur.polys=cur.polys.filter(x=>x!==a);saveSoon();closeSheet();draw();};});
+}
+$('#btnArea').onclick=()=>{if(!G){toast('Mapa sin georreferencia');return;}
+  if(meas){toast('Ya estás midiendo: usá Guardar o Cancelar');return;}
+  meas={pts:[],auto:false};measBar();toast('Tocá el mapa para marcar vértices, o usá tu posición / caminar contorno',3500);};
+
+/* =================== exportar =================== */
+function buildExport(fmt){
+  const base=(cur.name||'mapa').replace(/[^\w\-áéíóúñÁÉÍÓÚÑ ]+/g,'').trim().replace(/\s+/g,'_').slice(0,60);
+  const pts=cur.points, tr=cur.track;
+  if(fmt==='kml'){
+    const pm=pts.map(p=>`<Placemark><name>${esc(p.name)}</name><description>${esc([p.note,p.zone?'Zona '+p.zone:'',new Date(p.t).toLocaleString('es-AR')].filter(Boolean).join(' | '))}</description><Point><coordinates>${p.lon},${p.lat},0</coordinates></Point></Placemark>`).join('');
+    const ln=tr.length>1?`<Placemark><name>Recorrido</name><Style><LineStyle><color>ffa21f7b</color><width>3</width></LineStyle></Style><LineString><tessellate>1</tessellate><coordinates>${tr.map(t=>t[1]+','+t[0]+',0').join(' ')}</coordinates></LineString></Placemark>`:'';
+    const pg=(cur.polys||[]).map(a=>`<Placemark><name>${esc(a.name)}</name><description>${esc([fmtHa(a.ha),'perímetro '+fmtDist(a.per),a.note].filter(Boolean).join(' | '))}</description><Style><LineStyle><color>ff6b7900</color><width>2</width></LineStyle><PolyStyle><color>4d6b7900</color></PolyStyle></Style><ExtendedData><Data name="ha"><value>${a.ha}</value></Data></ExtendedData><Polygon><outerBoundaryIs><LinearRing><coordinates>${a.pts.concat([a.pts[0]]).map(p=>p[1]+','+p[0]+',0').join(' ')}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`).join('');
+    return {name:base+'.kml',type:'application/vnd.google-earth.kml+xml',text:`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(cur.name)}</name>${pg}${pm}${ln}</Document></kml>`};}
+  if(fmt==='geojson'){
+    const f=pts.map(p=>({type:'Feature',properties:{nombre:p.name,obs:p.note,zona:p.zone,precision_m:p.acc,fecha:new Date(p.t).toISOString()},geometry:{type:'Point',coordinates:[p.lon,p.lat]}}));
+    for(const a of cur.polys||[])f.push({type:'Feature',properties:{nombre:a.name,obs:a.note,ha:a.ha,perimetro_m:a.per},geometry:{type:'Polygon',coordinates:[a.pts.concat([a.pts[0]]).map(p=>[p[1],p[0]])]}});
+    if(tr.length>1)f.push({type:'Feature',properties:{nombre:'Recorrido'},geometry:{type:'LineString',coordinates:tr.map(t=>[t[1],t[0]])}});
+    return {name:base+'.geojson',type:'application/geo+json',text:JSON.stringify({type:'FeatureCollection',features:f},null,1)};}
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  return {name:base+'_puntos.csv',type:'text/csv',text:'﻿nombre;latitud;longitud;zona;precision_m;observacion;fecha\n'+pts.map(p=>[q(p.name),p.lat,p.lon,q(p.zone),p.acc??'',q(p.note),q(new Date(p.t).toLocaleString('es-AR'))].join(';')).join('\n')};
+}
+async function doExport(fmt,share){
+  const o=buildExport(fmt); const file=new File([o.text],o.name,{type:o.type});
+  if(share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:o.name});return;}catch(e){if(e.name==='AbortError')return;}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=o.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+}
+function exportSheet(){
+  const canShare=!!navigator.share;
+  sheet(`<h2>Exportar</h2><div class="meta">${cur.points.length} waypoints · ${(cur.polys||[]).length} áreas · recorrido de ${cur.track.length} posiciones</div>
+   ${['kml','geojson','csv'].map(f=>`<button class="menuitem" data-f="${f}"><div style="flex:1"><b>${f.toUpperCase()}</b><small>${{kml:'Waypoints, áreas y recorrido · Google Earth, QGIS',geojson:'Waypoints, áreas y recorrido · QGIS y otros SIG',csv:'Excel (solo waypoints)'}[f]}</small></div><span style="color:var(--acc);font-weight:600">${canShare?'Compartir':'Descargar'}</span></button>`).join('')}`,
+   sh=>sh.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>doExport(b.dataset.f,canShare)));
+}
+
+/* =================== botones y menú =================== */
+function updBtns(){$('#btnFollow').classList.toggle('on',follow);$('#btnTrack').classList.toggle('rec',rec);}
+$('#btnFollow').onclick=()=>{if(!G){toast('Mapa sin georreferencia');return;}if(!me){toast('Esperando señal GPS…');return;}
+  follow=!follow;updBtns();if(follow){const W=view.clientWidth,H=view.clientHeight,f=Math.min(W/(cw*kx),H/ch);if(s<f*2)s=f*2.5;centerOn(me.lat,me.lon);}};
+$('#btnMark').onclick=()=>{if(!G){toast('Mapa sin georreferencia');return;}if(!me){toast('Esperando GPS. También podés mantener apretado el mapa para marcar.');return;}
+  newPoint(me.lat,me.lon,me.acc,'Punto en mi posición');};
+$('#btnTrack').onclick=()=>{if(!G){toast('Mapa sin georreferencia');return;}rec=!rec;updBtns();toast(rec?'Grabando recorrido (mantené la app abierta)':'Recorrido pausado');};
+$('#btnPoints').onclick=()=>cur&&pointsList();
+$('#btnMenu').onclick=()=>{
+  sheet(`<h2>${esc(cur.name)}</h2>
+    <button class="menuitem" data-a="fit">Ver mapa completo</button>
+    <button class="menuitem" data-a="exp">Exportar waypoints, áreas y recorrido<small>KML, GeoJSON o CSV</small></button>
+    <button class="menuitem" data-a="wake">${wakeLock?'Permitir que la pantalla se apague':'Mantener pantalla encendida'}</button>
+    <button class="menuitem" data-a="comp">${compassOn?'Desactivar brújula':'Activar brújula'}<small>Muestra hacia dónde mira el teléfono (sin moverte)</small></button>
+    <button class="menuitem" data-a="clr">Borrar recorrido grabado<small>${cur.track.length} posiciones</small></button>
+    ${cur.blank?`<button class="menuitem" data-a="rec">Recentrar cuadrícula en mi posición<small>Los waypoints y áreas se mantienen</small></button>`:''}
+    <button class="menuitem ${cur.blank?'hidden':''}" data-a="leg">Leyenda / dosis por color<small>${(cur.legend||[]).map(l=>l.label||'?').join(' · ')||'no se detectaron colores'}</small></button>`, sh=>{
+    sh.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const a=b.dataset.a;
+      if(a==='fit'){closeSheet();follow=false;updBtns();fitView();}
+      if(a==='exp')exportSheet();
+      if(a==='wake'){closeSheet();toggleWake();}
+      if(a==='comp'){closeSheet();toggleCompass();}
+      if(a==='clr'){if(!b.dataset.c){b.dataset.c=1;b.firstChild.textContent='¿Seguro? Tocá de nuevo para borrar ';return;}cur.track=[];saveSoon();closeSheet();draw();toast('Recorrido borrado');}
+      if(a==='leg')legendSheet();
+      if(a==='rec'){if(!me){toast('Esperando GPS…');return;}cur.center={lat:me.lat,lon:me.lon};saveMap(cur).then(()=>{closeSheet();openMap(cur.id);});}
+    });});
+};
+
+function legendSheet(){
+  const L=cur.legend||[];
+  sheet(`<h2>Leyenda</h2><div class="meta">Colores encontrados en el mapa. Escribí el valor de cada uno (dosis, zona, ambiente) y se mostrará al pararte encima.</div>
+    ${L.map((l,i)=>`<div style="display:flex;align-items:center;gap:10px;margin-top:10px"><span style="width:34px;height:34px;border-radius:8px;flex:none;border:1px solid rgba(0,0,0,.2);background:rgb(${l.rgb.join(',')})"></span><input data-i="${i}" value="${esc(l.label)}" placeholder="Ej: 73"></div>`).join('')||'<div class="empty">No se detectaron colores.</div>'}
+    <div class="row"><button class="btn" id="s_re">Volver a detectar</button><button class="btn pri" id="s_ok">Guardar</button></div>`,sh=>{
+    sh.querySelector('#s_ok').onclick=()=>{sh.querySelectorAll('input[data-i]').forEach(inp=>L[+inp.dataset.i].label=inp.value.trim());saveSoon();closeSheet();updatePanel();};
+    sh.querySelector('#s_re').onclick=()=>{cur.legend=detectColors();saveSoon();legendSheet();};});
+}
+
+/* =================== hoja inferior genérica =================== */
+function sheet(html,bind){const sh=$('#sheet');sh.innerHTML=html;sh.classList.remove('hidden');$('#scrim').classList.remove('hidden');bind&&bind(sh);}
+function closeSheet(){$('#sheet').classList.add('hidden');$('#scrim').classList.add('hidden');}
+$('#scrim').onclick=closeSheet;
+window.addEventListener('resize',()=>{if(cur&&!$('#mapv').classList.contains('hidden'))draw();});
+
+/* =================== arranque =================== */
+(async()=>{
+  await openDB(); await listMaps();
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){try{await navigator.serviceWorker.register('sw.js');}catch(e){}}
+  // PDF recibido con "Compartir" desde WhatsApp / Archivos (Android, app instalada)
+  if(new URLSearchParams(location.search).has('shared')){
+    try{const c=await caches.open('shared');const r=await c.match('__shared.pdf');
+      if(r){const nm=decodeURIComponent(r.headers.get('X-Name')||'mapa.pdf');await c.delete('__shared.pdf');history.replaceState(null,'',location.pathname);await importPdf(await r.blob(),nm);}}catch(e){}
+  }
+})();
+</script>
+</body>
+</html>
